@@ -53,7 +53,12 @@ export default function App() {
   const [projects, setProjects] = useState<ProjectItem[]>(() => {
     try {
       const saved = localStorage.getItem(STORAGE_KEYS.PROJECTS);
-      return saved ? JSON.parse(saved) : INITIAL_PROJECTS;
+      if (!saved) return INITIAL_PROJECTS;
+      const parsed: ProjectItem[] = JSON.parse(saved);
+      if (!Array.isArray(parsed)) return INITIAL_PROJECTS;
+      const initialIds = new Set(INITIAL_PROJECTS.map((p) => p.id));
+      const customProjects = parsed.filter((p) => p && p.id && !initialIds.has(p.id));
+      return [...INITIAL_PROJECTS, ...customProjects];
     } catch {
       return INITIAL_PROJECTS;
     }

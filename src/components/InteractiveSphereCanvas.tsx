@@ -36,9 +36,13 @@ export const InteractiveSphereCanvas: React.FC = () => {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const [activeCluster, setActiveCluster] = useState<'all' | Node3D['cluster']>('all');
   const activeClusterRef = useRef<'all' | Node3D['cluster']>('all');
+  const drawFrameRef = useRef<(() => void) | null>(null);
 
   useEffect(() => {
     activeClusterRef.current = activeCluster;
+    if (drawFrameRef.current) {
+      drawFrameRef.current();
+    }
   }, [activeCluster]);
 
   useEffect(() => {
@@ -47,7 +51,9 @@ export const InteractiveSphereCanvas: React.FC = () => {
     const ctx = canvas.getContext('2d');
     if (!ctx) return;
 
-    const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    const prefersReducedMotion =
+      typeof window !== 'undefined' &&
+      window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
     const nodes: Node3D[] = [];
     const clusters: Node3D['cluster'][] = ['economics', 'ai', 'analytics', 'creative'];
@@ -56,7 +62,6 @@ export const InteractiveSphereCanvas: React.FC = () => {
     KEY_NODES.forEach((kn) => {
       const lat = (kn.latDeg * Math.PI) / 180;
       const lon = (kn.lonDeg * Math.PI) / 180;
-      // Y is vertical axis (poles at top/bottom), X and Z span the 360° horizontal equator
       const baseX = Math.cos(lat) * Math.sin(lon);
       const baseY = Math.sin(lat);
       const baseZ = Math.cos(lat) * Math.cos(lon);
@@ -76,7 +81,6 @@ export const InteractiveSphereCanvas: React.FC = () => {
     const goldenRatio = (1 + Math.sqrt(5)) / 2;
 
     for (let i = 0; i < numLatticePoints; i++) {
-      // y goes smoothly from +1 (North Pole) to -1 (South Pole)
       const baseY = 1 - (2 * (i + 0.5)) / numLatticePoints;
       const radiusAtY = Math.sqrt(Math.max(0, 1 - baseY * baseY));
       const theta = (2 * Math.PI * i) / goldenRatio;
@@ -102,54 +106,13 @@ export const InteractiveSphereCanvas: React.FC = () => {
     let lastMouseX = 0;
     let lastMouseY = 0;
 
-    const handleResize = () => {
+    const drawScene = () => {
       if (!canvas) return;
-      const rect = canvas.getBoundingClientRect();
-      const dpr = Math.min(window.devicePixelRatio || 1, 2);
-      canvas.width = rect.width * dpr;
-      canvas.height = rect.height * dpr;
-      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-    };
-
-    handleResize();
-    window.addEventListener('resize', handleResize);
-
-    const onPointerDown = (e: PointerEvent) => {
-      isDragging = true;
-      lastMouseX = e.clientX;
-      lastMouseY = e.clientY;
-    };
-
-    const onPointerMove = (e: PointerEvent) => {
-      const rect = canvas.getBoundingClientRect();
-      const relX = (e.clientX - rect.left) / rect.width - 0.5;
-      const relY = (e.clientY - rect.top) / rect.height - 0.5;
-
-      if (isDragging) {
-        const dx = e.clientX - lastMouseX;
-        const dy = e.clientY - lastMouseY;
-        rotY += dx * 0.008;
-        rotX = Math.max(-1.05, Math.min(1.05, rotX + dy * 0.008));
-        lastMouseX = e.clientX;
-        lastMouseY = e.clientY;
-      } else if (!prefersReducedMotion) {
-        targetVelY = 0.0038 + relX * 0.0055;
-        targetVelX = relY * 0.0035;
-      }
-    };
-
-    const onPointerUp = () => {
-      isDragging = false;
-    };
-
-    canvas.addEventListener('pointerdown', onPointerDown);
-    window.addEventListener('pointermove', onPointerMove);
-    window.addEventListener('pointerup', onPointerUp);
-
-    const render = () => {
       const rect = canvas.getBoundingClientRect();
       const width = rect.width;
       const height = rect.height;
+      if (width === 0 || height === 0) return;
+
       const cx = width / 2;
       const cy = height / 2;
       const radius = Math.min(width, height) * 0.35;
@@ -176,11 +139,6 @@ export const InteractiveSphereCanvas: React.FC = () => {
       ctx.stroke();
       ctx.restore();
 
-      if (!isDragging && !prefersReducedMotion) {
-        rotY += targetVelY;
-        rotX += (targetVelX - rotX * 0.04) * 0.08;
-      }
-
       const cosY = Math.cos(rotY);
       const sinY = Math.sin(rotY);
       const cosX = Math.cos(rotX);
@@ -188,10 +146,8 @@ export const InteractiveSphereCanvas: React.FC = () => {
 
       // Project 3D coordinates around the full 360° globe
       const projected = nodes.map((node) => {
-        // Rotate 360° around vertical Y-axis
         const x1 = node.baseX * cosY + node.baseZ * sinY;
         const z1 = node.baseZ * cosY - node.baseX * sinY;
-        // Tilt around horizontal X-axis
         const y2 = node.baseY * cosX - z1 * sinX;
         const z2 = z1 * cosX + node.baseY * sinX;
 
@@ -240,15 +196,13 @@ export const InteractiveSphereCanvas: React.FC = () => {
         }
       }
 
-      // Draw nodes and 360° distributed labels (front hemisphere bright, back hemisphere subtle depth)
+      // Draw nodes and 360° distributed labels
       projected.forEach((p) => {
         const isMatched = currentFilter === 'all' || p.cluster === currentFilter;
-        // Smooth depth alpha from back of globe (z2 = -1 -> 0.22) to front of globe (z2 = +1 -> 1.0)
         const depthAlpha = Math.max(0.2, (p.z2 + 1.35) / 2.35);
         const finalAlpha = isMatched ? depthAlpha : depthAlpha * 0.18;
         const color = CLUSTER_COLORS[p.cluster];
 
-        // Subtle outer halo on key labeled nodes
         if (p.label && isMatched) {
           ctx.beginPath();
           ctx.arc(p.px, p.py, p.size * p.perspective * 2.1, 0, Math.PI * 2);
@@ -269,7 +223,6 @@ export const InteractiveSphereCanvas: React.FC = () => {
         ctx.globalAlpha = finalAlpha;
         ctx.fill();
 
-        // Render labels across the entire 360° sphere with depth-scaled opacity and font size
         if (p.label && isMatched && p.z2 > -0.65) {
           const isFrontHemisphere = p.z2 >= 0;
           const labelAlpha = isFrontHemisphere
@@ -281,7 +234,6 @@ export const InteractiveSphereCanvas: React.FC = () => {
           ctx.font = `${isFrontHemisphere ? '500' : '400'} ${fontSize}px "JetBrains Mono", monospace`;
           ctx.fillStyle = isFrontHemisphere ? '#F4F4F5' : '#94A3B8';
 
-          // Place text slightly offset from node center
           const textX = p.px + 8 * p.perspective;
           const textY = p.py + 3;
           ctx.fillText(p.label, textX, textY);
@@ -289,17 +241,83 @@ export const InteractiveSphereCanvas: React.FC = () => {
       });
 
       ctx.globalAlpha = 1;
+    };
 
-      if (!prefersReducedMotion) {
-        animationFrameId = requestAnimationFrame(render);
+    drawFrameRef.current = drawScene;
+
+    const handleResize = () => {
+      if (!canvas) return;
+      const rect = canvas.getBoundingClientRect();
+      if (rect.width === 0 || rect.height === 0) return;
+      const dpr = Math.min(window.devicePixelRatio || 1, 2);
+      canvas.width = rect.width * dpr;
+      canvas.height = rect.height * dpr;
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+      drawScene();
+    };
+
+    handleResize();
+    window.addEventListener('resize', handleResize);
+
+    let resizeObserver: ResizeObserver | null = null;
+    if (typeof ResizeObserver !== 'undefined') {
+      resizeObserver = new ResizeObserver(() => handleResize());
+      resizeObserver.observe(canvas);
+    }
+
+    const onPointerDown = (e: PointerEvent) => {
+      isDragging = true;
+      lastMouseX = e.clientX;
+      lastMouseY = e.clientY;
+    };
+
+    const onPointerMove = (e: PointerEvent) => {
+      const rect = canvas.getBoundingClientRect();
+      if (rect.width === 0 || rect.height === 0) return;
+      const relX = (e.clientX - rect.left) / rect.width - 0.5;
+      const relY = (e.clientY - rect.top) / rect.height - 0.5;
+
+      if (isDragging) {
+        const dx = e.clientX - lastMouseX;
+        const dy = e.clientY - lastMouseY;
+        rotY += dx * 0.008;
+        rotX = Math.max(-1.05, Math.min(1.05, rotX + dy * 0.008));
+        lastMouseX = e.clientX;
+        lastMouseY = e.clientY;
+        if (prefersReducedMotion) {
+          drawScene();
+        }
+      } else if (!prefersReducedMotion) {
+        targetVelY = 0.0038 + relX * 0.0055;
+        targetVelX = relY * 0.0035;
       }
     };
 
-    render();
+    const onPointerUp = () => {
+      isDragging = false;
+    };
+
+    canvas.addEventListener('pointerdown', onPointerDown);
+    window.addEventListener('pointermove', onPointerMove);
+    window.addEventListener('pointerup', onPointerUp);
+
+    const animate = () => {
+      if (!isDragging && !prefersReducedMotion) {
+        rotY += targetVelY;
+        rotX += (targetVelX - rotX * 0.04) * 0.08;
+      }
+      drawScene();
+      if (!prefersReducedMotion) {
+        animationFrameId = requestAnimationFrame(animate);
+      }
+    };
+
+    animate();
 
     return () => {
       cancelAnimationFrame(animationFrameId);
       window.removeEventListener('resize', handleResize);
+      if (resizeObserver) resizeObserver.disconnect();
       canvas.removeEventListener('pointerdown', onPointerDown);
       window.removeEventListener('pointermove', onPointerMove);
       window.removeEventListener('pointerup', onPointerUp);

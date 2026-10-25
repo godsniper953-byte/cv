@@ -19,12 +19,19 @@ export const ProjectCard: React.FC<ProjectCardProps> = ({
   );
 
   const handlePointerMove = (e: React.PointerEvent<HTMLElement>) => {
-    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+    if (
+      typeof window !== 'undefined' &&
+      window.matchMedia('(prefers-reduced-motion: reduce)').matches
+    ) {
+      return;
+    }
     if (e.pointerType === 'touch') return;
     const card = cardRef.current;
     if (!card) return;
 
     const rect = card.getBoundingClientRect();
+    if (rect.width === 0 || rect.height === 0) return;
+
     const x = (e.clientX - rect.left) / rect.width - 0.5;
     const y = (e.clientY - rect.top) / rect.height - 0.5;
 
@@ -47,24 +54,16 @@ export const ProjectCard: React.FC<ProjectCardProps> = ({
       onPointerMove={handlePointerMove}
       onPointerLeave={handlePointerLeave}
       onClick={() => onExplore(project)}
-      onKeyDown={(e) => {
-        if (e.key === 'Enter' || e.key === ' ') {
-          e.preventDefault();
-          onExplore(project);
-        }
-      }}
-      tabIndex={0}
-      role="button"
-      aria-label={`Explore project details for ${project.title}`}
       style={{
         transform: tiltTransform,
-        transition: 'transform 180ms cubic-bezier(0.16, 1, 0.3, 1), border-color 180ms ease, box-shadow 180ms ease',
+        transition:
+          'transform 180ms cubic-bezier(0.16, 1, 0.3, 1), border-color 180ms ease, box-shadow 180ms ease',
       }}
       className={`group cursor-pointer rounded-2xl bg-[#0B0D14]/90 backdrop-blur-md border ${
         isLive
           ? 'border-blue-500/40 hover:border-blue-400/80 hover:shadow-[0_0_40px_-12px_rgba(59,130,246,0.35)]'
           : 'border-zinc-800/85 hover:border-blue-500/60 hover:shadow-[0_0_30px_-12px_rgba(59,130,246,0.22)]'
-      } overflow-hidden flex flex-col justify-between focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 ${
+      } overflow-hidden flex flex-col justify-between ${
         isFeaturedWide ? 'lg:col-span-12 lg:grid lg:grid-cols-12' : 'lg:col-span-6'
       }`}
     >
@@ -119,7 +118,16 @@ export const ProjectCard: React.FC<ProjectCardProps> = ({
 
           <div className="flex items-start justify-between gap-3">
             <h3 className="text-xl sm:text-2xl font-bold text-white group-hover:text-blue-400 transition-colors">
-              {project.title}
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onExplore(project);
+                }}
+                className="text-left focus-visible:outline-none focus-visible:underline"
+              >
+                {project.title}
+              </button>
             </h3>
             <ArrowUpRight className="w-5 h-5 text-zinc-500 group-hover:text-blue-400 transition-colors shrink-0 mt-1" />
           </div>
@@ -158,7 +166,7 @@ export const ProjectCard: React.FC<ProjectCardProps> = ({
                 target="_blank"
                 rel="noopener noreferrer"
                 onClick={(e) => e.stopPropagation()}
-                className="inline-flex items-center gap-2 px-4 py-2.5 text-xs font-medium text-white bg-blue-600 rounded-xl hover:bg-blue-500 transition-colors whitespace-nowrap shrink-0"
+                className="inline-flex items-center gap-2 px-4 py-2.5 text-xs font-medium text-white bg-blue-600 rounded-xl hover:bg-blue-500 transition-colors whitespace-nowrap shrink-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-400"
                 aria-label={`View live project ${project.title} in a new tab`}
               >
                 <span>View Live Project</span>
@@ -172,7 +180,7 @@ export const ProjectCard: React.FC<ProjectCardProps> = ({
                 e.stopPropagation();
                 onExplore(project);
               }}
-              className={`inline-flex items-center gap-2 px-4 py-2.5 text-xs font-medium rounded-xl transition-colors whitespace-nowrap shrink-0 ${
+              className={`inline-flex items-center gap-2 px-4 py-2.5 text-xs font-medium rounded-xl transition-colors whitespace-nowrap shrink-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-400 ${
                 project.liveDemoUrl
                   ? 'text-zinc-100 bg-zinc-900 border border-zinc-700/80 hover:bg-zinc-800 hover:border-zinc-600'
                   : 'text-white bg-zinc-900 border border-zinc-700/90 hover:bg-zinc-800 hover:border-blue-500/50'
@@ -189,7 +197,7 @@ export const ProjectCard: React.FC<ProjectCardProps> = ({
                 target="_blank"
                 rel="noopener noreferrer"
                 onClick={(e) => e.stopPropagation()}
-                className="inline-flex items-center gap-1.5 px-3 py-2.5 text-xs font-medium text-zinc-400 hover:text-zinc-100 transition-colors whitespace-nowrap shrink-0"
+                className="inline-flex items-center gap-1.5 px-3 py-2.5 text-xs font-medium text-zinc-400 hover:text-zinc-100 transition-colors whitespace-nowrap shrink-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-400 rounded-lg"
                 aria-label={`View source repository for ${project.title} on GitHub`}
               >
                 <Github className="w-3.5 h-3.5" />
