@@ -268,16 +268,29 @@ export const ResumeSection: React.FC<ResumeSectionProps> = ({
           <div className="pt-7 grid grid-cols-1 lg:grid-cols-12 gap-6">
             <div className="lg:col-span-3">
               <h4 className="text-xs font-mono text-zinc-400 tracking-wider">
-                PORTFOLIO CONCEPTS
+                PROJECTS &amp; CONCEPTS
               </h4>
             </div>
             <div className="lg:col-span-9 space-y-5">
               {projects.map((proj) => (
                 <div key={proj.id}>
                   <div className="flex flex-wrap items-baseline justify-between gap-2">
-                    <h5 className="text-sm font-semibold text-white">
-                      {proj.title}
-                    </h5>
+                    <div className="flex flex-wrap items-center gap-2">
+                      <h5 className="text-sm font-semibold text-white">
+                        {proj.title}
+                      </h5>
+                      {proj.liveDemoUrl && (
+                        <a
+                          href={proj.liveDemoUrl}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="inline-flex items-center gap-1 text-xs font-mono text-blue-400 hover:text-blue-300"
+                        >
+                          <span>({proj.liveDemoUrl.replace(/^https?:\/\//, '').replace(/\/$/, '')})</span>
+                          <ExternalLink className="w-3 h-3" />
+                        </a>
+                      )}
+                    </div>
                     <span className="text-xs font-mono text-blue-400">
                       {proj.status} · {proj.category}
                     </span>
@@ -286,7 +299,7 @@ export const ResumeSection: React.FC<ResumeSectionProps> = ({
                     {proj.shortDescription}
                   </p>
                   <p className="text-xs text-zinc-500 mt-1">
-                    Domains: {proj.technologies.join(' · ')}
+                    Technologies: {proj.technologies.join(' · ')}
                   </p>
                 </div>
               ))}

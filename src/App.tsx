@@ -28,13 +28,14 @@ import {
 } from './data/portfolioData';
 import { InteractiveSphereCanvas } from './components/InteractiveSphereCanvas';
 import { ProjectDetailModal } from './components/ProjectDetailModal';
+import { ProjectCard } from './components/ProjectCard';
 import { GitHubSection } from './components/GitHubSection';
 import { ResumeSection } from './components/ResumeSection';
 import { OwnerConfigModal } from './components/OwnerConfigModal';
 
 const STORAGE_KEYS = {
   CONFIG: 'ahmed_ali_portfolio_config_v1',
-  PROJECTS: 'ahmed_ali_portfolio_projects_v1',
+  PROJECTS: 'ahmed_ali_portfolio_projects_v2',
   CREDENTIALS: 'ahmed_ali_portfolio_credentials_v1',
 };
 
@@ -671,7 +672,7 @@ export default function App() {
             <div className="flex flex-col lg:flex-row lg:items-end justify-between gap-6 mb-12">
               <div>
                 <p className="text-xs font-mono text-blue-400 tracking-wide mb-3">
-                  03. SELECTED CONCEPTS &amp; WORKFLOWS
+                  03. SELECTED PROJECTS &amp; CONCEPTS
                 </p>
                 <h2
                   id="projects-heading"
@@ -681,10 +682,9 @@ export default function App() {
                   Projects Portfolio
                 </h2>
                 <p className="mt-3 text-base text-zinc-400 max-w-2xl leading-relaxed">
-                  Explorations combining web design, AI creative workflows, and macroeconomic data
-                  visualization. Unfinished concepts are transparently labeled as{' '}
-                  <span className="text-zinc-200 font-medium">Concept Project</span> or{' '}
-                  <span className="text-zinc-200 font-medium">In Development</span>.
+                  Featuring <span className="text-zinc-100 font-medium">ArthNiti</span>, a live
+                  Indian economic intelligence and data analytics platform, alongside explorations in
+                  3D web design and AI creative workflows.
                 </p>
               </div>
 
@@ -695,10 +695,10 @@ export default function App() {
                   aria-label="Filter projects by category"
                 >
                   {[
-                    { id: 'all', label: 'All' },
+                    { id: 'all', label: 'All Projects' },
+                    { id: 'Economics & Data Analytics', label: 'Economics & Data' },
                     { id: 'Web & 3D Concept', label: 'Web & 3D' },
                     { id: 'AI & Creative Workflows', label: 'AI & Creative' },
-                    { id: 'Economics & Analytics', label: 'Economics' },
                   ].map((tab) => (
                     <button
                       key={tab.id}
@@ -726,97 +726,17 @@ export default function App() {
               </div>
             </div>
 
-            {/* Dynamic Bento Grid (Wide showcase card + compact cards) */}
+            {/* Dynamic Bento Grid (Wide showcase card for ArthNiti + compact project cards) */}
             <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
               {filteredProjects.map((project, index) => {
                 const isFeaturedWide = index === 0 && projectFilter === 'all';
                 return (
-                  <article
+                  <ProjectCard
                     key={project.id}
-                    onClick={() => setSelectedProject(project)}
-                    onKeyDown={(e) => {
-                      if (e.key === 'Enter' || e.key === ' ') {
-                        e.preventDefault();
-                        setSelectedProject(project);
-                      }
-                    }}
-                    tabIndex={0}
-                    role="button"
-                    aria-label={`Inspect project details for ${project.title}`}
-                    className={`group cursor-pointer rounded-2xl bg-[#0B0D14] border border-zinc-800/85 hover:border-blue-500/60 transition-all overflow-hidden flex flex-col justify-between focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 ${
-                      isFeaturedWide ? 'lg:col-span-12 lg:grid lg:grid-cols-12' : 'lg:col-span-6'
-                    }`}
-                  >
-                    {/* Visual Artwork Container */}
-                    <div
-                      className={`relative overflow-hidden bg-[#070910] ${
-                        isFeaturedWide
-                          ? 'lg:col-span-7 aspect-video lg:aspect-auto lg:h-full'
-                          : 'aspect-video border-b border-zinc-800/80'
-                      }`}
-                    >
-                      <img
-                        src={project.coverSvgDataUri}
-                        alt={`${project.title} preview illustration`}
-                        referrerPolicy="no-referrer"
-                        loading="lazy"
-                        className="w-full h-full object-cover group-hover:scale-[1.02] transition-transform duration-300"
-                      />
-                      <div className="absolute inset-0 bg-gradient-to-t from-black/75 via-black/20 to-transparent flex items-end p-5">
-                        <span className="text-xs font-mono text-zinc-300">
-                          Click to launch Interactive Concept Overview
-                        </span>
-                      </div>
-                    </div>
-
-                    {/* Text Content */}
-                    <div
-                      className={`p-6 sm:p-8 flex flex-col justify-between ${
-                        isFeaturedWide ? 'lg:col-span-5' : 'flex-1'
-                      }`}
-                    >
-                      <div>
-                        {/* Clean Unboxed Status & Category Metadata */}
-                        <div className="flex flex-wrap items-center gap-2 text-xs text-zinc-400 mb-2.5">
-                          <span className="text-blue-400 font-medium">{project.status}</span>
-                          <span aria-hidden="true">·</span>
-                          <span>{project.category}</span>
-                        </div>
-
-                        <div className="flex items-start justify-between gap-3">
-                          <h3 className="text-xl sm:text-2xl font-bold text-white group-hover:text-blue-400 transition-colors">
-                            {project.title}
-                          </h3>
-                          <ArrowUpRight className="w-5 h-5 text-zinc-500 group-hover:text-blue-400 transition-colors shrink-0 mt-1" />
-                        </div>
-
-                        <p className="text-sm text-zinc-300 mt-3 leading-relaxed">
-                          {project.shortDescription}
-                        </p>
-
-                        {isFeaturedWide && (
-                          <p className="text-xs sm:text-sm text-zinc-400 mt-3 leading-relaxed">
-                            {project.detailedOverview}
-                          </p>
-                        )}
-                      </div>
-
-                      <div className="pt-6 mt-6 border-t border-zinc-800/70">
-                        <div className="flex flex-wrap items-center gap-x-2 gap-y-1 text-xs text-zinc-400">
-                          {project.technologies.map((tech, idx) => (
-                            <React.Fragment key={tech}>
-                              <span className="text-zinc-300 font-medium">{tech}</span>
-                              {idx < project.technologies.length - 1 && (
-                                <span aria-hidden="true" className="text-zinc-600">
-                                  ·
-                                </span>
-                              )}
-                            </React.Fragment>
-                          ))}
-                        </div>
-                      </div>
-                    </div>
-                  </article>
+                    project={project}
+                    isFeaturedWide={isFeaturedWide}
+                    onExplore={(proj) => setSelectedProject(proj)}
+                  />
                 );
               })}
             </div>

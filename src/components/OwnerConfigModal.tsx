@@ -46,10 +46,10 @@ export const OwnerConfigModal: React.FC<OwnerConfigModalProps> = ({
 
   // New Project form state
   const [projTitle, setProjTitle] = useState('');
-  const [projStatus, setProjStatus] = useState<'Concept Project' | 'In Development'>('In Development');
+  const [projStatus, setProjStatus] = useState<'Live Project' | 'Concept Project' | 'In Development'>('Live Project');
   const [projCategory, setProjCategory] = useState<
-    'Web & 3D Concept' | 'AI & Creative Workflows' | 'Economics & Analytics'
-  >('AI & Creative Workflows');
+    'Economics & Data Analytics' | 'Web & 3D Concept' | 'AI & Creative Workflows'
+  >('Economics & Data Analytics');
   const [projShortDesc, setProjShortDesc] = useState('');
   const [projOverview, setProjOverview] = useState('');
   const [projTech, setProjTech] = useState('Google Gemini, Data Analysis, Web Design');
@@ -305,10 +305,13 @@ export const OwnerConfigModal: React.FC<OwnerConfigModalProps> = ({
                 <select
                   value={projStatus}
                   onChange={(e) =>
-                    setProjStatus(e.target.value as 'Concept Project' | 'In Development')
+                    setProjStatus(
+                      e.target.value as 'Live Project' | 'Concept Project' | 'In Development'
+                    )
                   }
                   className="w-full px-3.5 py-2 text-sm rounded-lg bg-zinc-900 border border-zinc-800 text-white focus:outline-none focus:border-blue-500"
                 >
+                  <option value="Live Project">Live Project</option>
                   <option value="In Development">In Development</option>
                   <option value="Concept Project">Concept Project</option>
                 </select>
@@ -325,14 +328,14 @@ export const OwnerConfigModal: React.FC<OwnerConfigModalProps> = ({
                   onChange={(e) =>
                     setProjCategory(
                       e.target.value as
+                        | 'Economics & Data Analytics'
                         | 'Web & 3D Concept'
                         | 'AI & Creative Workflows'
-                        | 'Economics & Analytics'
                     )
                   }
                   className="w-full px-3.5 py-2 text-sm rounded-lg bg-zinc-900 border border-zinc-800 text-white focus:outline-none focus:border-blue-500"
                 >
-                  <option value="Economics & Analytics">Economics &amp; Analytics</option>
+                  <option value="Economics & Data Analytics">Economics &amp; Data Analytics</option>
                   <option value="AI & Creative Workflows">AI &amp; Creative Workflows</option>
                   <option value="Web & 3D Concept">Web &amp; 3D Concept</option>
                 </select>
